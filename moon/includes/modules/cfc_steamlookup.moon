@@ -1,3 +1,5 @@
+require "cfclogger"
+
 import Create, Pause, Start from timer
 import insert, remove from table
 import Replace, format from string
@@ -19,20 +21,18 @@ class CheckQueueManager
         @queueOrder = {}
         @attemptLimit = 2 -- Per lookup step
         @paused = false
+        @Logger = CFCLogger "CFC_SteamLookup"
 
-        @timerName = "Gm_SteamLookup_CheckQueue"
+        @timerName = "CFC_SteamLookup_CheckQueue"
         @timerInterval = 1.5
 
         @steamBase = "https://api.steampowered.com"
 
         @lookups =
-            SharedGame:
-                baseUrl: "#{@steamBase}/IPlayerService/IsPlayingSharedGame/v1/"
-
             PlayerSummary:
                 baseUrl: "#{@steamBase}/ISteamUser/GetPlayerSummaries/v2/"
 
-        @lookupSteps = { "SharedGame", "PlayerSummary" }
+        @lookupSteps = { "PlayerSummary" }
 
         @lookupStepsCount = #@lookupSteps
 
@@ -41,7 +41,7 @@ class CheckQueueManager
     _addQueryParams: (url, steamId, extraParams={}) =>
         extraParamsStr = ""
 
-        for key, value in pairs(extraParams)
+        for key, value in pairs extraParams
             extraParamsStr ..= "&#{key}=#{value}"
 
         "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParamsStr}"
@@ -87,7 +87,7 @@ class CheckQueueManager
             data = JSONToTable body
 
             queueItem.ply[stepName] = data
-            Run @successName, stepName, ply, data
+            Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
             @Logger\warn "Failed request to '#{url}', failure: #{err}"
@@ -124,10 +124,7 @@ class CheckQueueManager
 
         @Logger\error err
 
-export CheckQueue
+export SteamCheckQueue = CheckQueueManager!
 
-hook.Add "PostInitEntity", "Gm_SteamLookup_Init", ->
-    SteamCheckQueue = CheckQueueManager!
-
-hook.Add "PlayerAuthed", "Gm_SteamLookup_QueueLookup", (ply) ->
+hook.Add "PlayerAuthed", "CFC_SteamLookup_QueueLookup", (ply) ->
     pcall -> SteamCheckQueue\add ply
