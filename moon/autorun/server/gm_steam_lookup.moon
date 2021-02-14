@@ -1,14 +1,19 @@
 import Create, Pause, Start from timer
 import insert, remove from table
-import format from string
+import Replace, format from string
 
 import JSONToTable from util
 import GetBySteamID64 from player
 import Run from hook
+import Read from file
 
 pcall = pcall
 
-class CheckQueue
+steamKey = Read "steam_api_key.txt", "DATA"
+steamKey = Replace steamKey, "\r", ""
+steamKey = Replace steamKey, "\n", ""
+
+class CheckQueueManager
     new: () =>
         @queue = {}
         @queueOrder = {}
@@ -39,7 +44,7 @@ class CheckQueue
         for key, value in pairs(extraParams)
             extraParamsStr ..= "&#{key}=#{value}"
 
-        "#{url}?key=#{@steamKey}&steamids=#{steamId}&format=json#{extraParamsStr}"
+        "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParamsStr}"
 
     addLookup: (name, urlSuffix, extraParams, top=false) =>
         position = top and 1 or nil
@@ -50,10 +55,11 @@ class CheckQueue
         baseUrl = "#{@steamBase}/#{urlSuffix}"
         @lookups[name] = :baseUrl, :extraParams
 
-    add: (steamId) =>
-        @queue[steamId] =
-            attempts: 0
-            step: 1
+    add: (ply) =>
+        step = 1
+        attempts = 0
+        steamId = ply\SteamID64!
+        @queue[steamId] = :ply, :steamId, :attempts, :step
 
         insert @queueOrder, steamId
         @start! if @paused
@@ -79,10 +85,8 @@ class CheckQueue
             @queue[steamId].step += 1
 
             data = JSONToTable body
-            ply = GetBySteamID64 steamId
-            return unless ply
 
-            ply[stepName] = data
+            queueItem.ply[stepName] = data
             Run @successName, stepName, ply, data
 
         onFailure = (err) ->
@@ -111,7 +115,7 @@ class CheckQueue
             remove @queueOrder, 1
             return
 
-        success, err = pcall -> lookup(nextSteamId, steamIdInfo)
+        success, err = @lookup(nextSteamId, steamIdInfo)
 
         -- Reset the timer
         @start!
@@ -119,3 +123,11 @@ class CheckQueue
         return unless success
 
         @Logger\error err
+
+export CheckQueue
+
+hook.Add "PostInitEntity", "Gm_SteamLookup_Init", ->
+    SteamCheckQueue = CheckQueueManager!
+
+hook.Add "PlayerAuthed", "Gm_SteamLookup_QueueLookup", (ply) ->
+    pcall -> SteamCheckQueue\add ply
