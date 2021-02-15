@@ -98,9 +98,13 @@ class CheckQueueManager
         url = @_addQueryParams lookup.baseUrl, steamId, lookup.extraParams
         @Logger\info "Attempting lookup to '#{url}'"
 
-        onSuccess = (body) ->
+        onSuccess = (body, size, headers, code) ->
+            @Logger\debug body, size, headers, code
+
             @queue[steamId].attempts = 0
             @queue[steamId].step += 1
+
+            @Logger\debug body
 
             data = JSONToTable body
 
