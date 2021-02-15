@@ -1,7 +1,7 @@
 require "cfclogger"
 
 import Create, Pause, Start from timer
-import insert, remove from table
+import insert from table
 import Replace, format from string
 
 import JSONToTable from util
@@ -10,6 +10,7 @@ import Run from hook
 import Read from file
 
 pcall = pcall
+tableRemove = table.remove
 
 steamKey = Read "steam_api_key.txt", "DATA"
 steamKey = Replace steamKey, "\r", ""
@@ -27,24 +28,26 @@ class CheckQueueManager
         @timerInterval = 1.5
 
         @steamBase = "https://api.steampowered.com"
-
         @lookups =
             PlayerSummary:
                 baseUrl: "#{@steamBase}/ISteamUser/GetPlayerSummaries/v2/"
 
         @lookupSteps = { "PlayerSummary" }
-
         @lookupStepsCount = #@lookupSteps
 
         Create @timerName, @timerInterval, 0, self\groom
 
-    _addQueryParams: (url, steamId, extraParams={}) =>
+    _generateParamString: (extraParams) =>
         extraParamsStr = ""
 
         for key, value in pairs extraParams
             extraParamsStr ..= "&#{key}=#{value}"
 
-        "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParamsStr}"
+        extraParamsStr
+
+    _addQueryParams: (url, steamId, extraParams={}) =>
+        extraParams = @_generateParamString extraParams
+        "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParams}"
 
     addLookup: (name, urlSuffix, extraParams, top=false) =>
         position = top and 1 or nil
@@ -56,28 +59,34 @@ class CheckQueueManager
         @lookups[name] = :baseUrl, :extraParams
 
     add: (ply) =>
-        step = 1
-        attempts = 0
-        steamId = ply\SteamID64!
-        @queue[steamId] = :ply, :steamId, :attempts, :step
+        @queue[steamId] =
+            step: 1
+            attempts: 0
+            steamId: ply\SteamID64!
+            ply: ply
 
         insert @queueOrder, steamId
         @start! if @paused
 
-    remove: (steamId) =>
+    remove: (steamId, queueIndex) =>
         @queue[steamId] = nil
+        tableRemove queueOrder, queueIndex
+        @pause! if #@queueOrder == 0
 
     pause: () =>
         Pause @timerName
         @paused = true
+        @queue = {}
 
     start: () =>
         Start @timerName
         @paused = false
 
-    lookup: (steamId, queueItem) =>
+    lookup: (steamId) =>
+        queueItem = @queue[steamId]
         stepName = @lookupSteps[queueItem.step]
         lookup = @lookups[stepName]
+
         url = @_addQueryParams lookup.baseUrl, steamId, lookup.extraParams
 
         onSuccess = (body) ->
@@ -90,32 +99,27 @@ class CheckQueueManager
             Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
+            @queue[steamId].attempts += 1
             @Logger\warn "Failed request to '#{url}', failure: #{err}"
 
         http.Fetch url, onSuccess, onFailure
 
     groom: () =>
-        queueOrderCount = #@queueOrder
-
-        if queueOrderCount == 0
-            @pause!
-            @queue = {}
-            return
-
         nextSteamId = @queueOrder[1]
         steamIdInfo = @queue[nextSteamId]
 
+        removeId = -> @remove nextSteamId, 1
+
         if steamIdInfo == nil
-            @queue[nextSteamId] = nil
-            remove @queueOrder, 1
-            return
+            return removeId!
 
         if steamIdInfo.step > @lookupStepsCount
-            @queue[nextSteamId] = nil
-            remove @queueOrder, 1
-            return
+            return removeId!
 
-        success, err = @lookup(nextSteamId, steamIdInfo)
+        if steamIdInfo.attempts > @attemptLimit
+            return removeId!
+
+        success, err = @lookup nextSteamId
 
         -- Reset the timer
         @start!
