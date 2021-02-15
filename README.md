@@ -16,7 +16,7 @@ This library provides two interactions.
 **Listening for lookups**
 SteamLookups runs a hook on every successful lookup.
  - `CFC_SteamLookup_SuccessfulPlayerData` will give you `stepName`, `ply`, and `data`.
- - `stepName` is the nice-name of the event (by default, includes only the `PlayerSummary` )
+ - `stepName` is the nice-name of the event (by default, `PlayerSummary` is the only event )
  - `ply` is the player the lookup was done for
  - `data` is the raw response from the Steam API
 
