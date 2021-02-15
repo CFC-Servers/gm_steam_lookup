@@ -123,7 +123,7 @@ class CheckQueueManager
         removeId = -> @remove nextSteamId, 1
 
         if steamIdInfo == nil
-            return removeId!
+            return
 
         if steamIdInfo.step > @lookupStepsCount
             return removeId!
