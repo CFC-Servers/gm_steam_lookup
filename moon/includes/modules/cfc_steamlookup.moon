@@ -37,6 +37,8 @@ class CheckQueueManager
 
         Create @timerName, @timerInterval, 0, self\groom
 
+        @Logger\info "Loaded!"
+
     _generateParamString: (extraParams) =>
         extraParamsStr = ""
 
@@ -50,6 +52,8 @@ class CheckQueueManager
         "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParams}"
 
     addLookup: (name, urlSuffix, extraParams, top=false) =>
+        @Logger\info "Adding new Lookup. Name: '#{name}' | URL: '#{urlSuffix}'"
+
         position = top and 1 or nil
 
         insert @lookupSteps, name, position
@@ -59,10 +63,14 @@ class CheckQueueManager
         @lookups[name] = :baseUrl, :extraParams
 
     add: (ply) =>
+        steamId = ply\SteamID64!
+
+        @Logger\debug "Adding new player to queue, '#{steamId}'"
+
         @queue[steamId] =
             step: 1
             attempts: 0
-            steamId: ply\SteamID64!
+            steamId: steamId
             ply: ply
 
         insert @queueOrder, steamId
@@ -88,6 +96,7 @@ class CheckQueueManager
         lookup = @lookups[stepName]
 
         url = @_addQueryParams lookup.baseUrl, steamId, lookup.extraParams
+        @Logger\info "Attempting lookup to '#{url}'"
 
         onSuccess = (body) ->
             @queue[steamId].attempts = 0
@@ -96,6 +105,7 @@ class CheckQueueManager
             data = JSONToTable body
 
             queueItem.ply[stepName] = data
+            @Logger\info "Successful lookup to '#{url}'"
             Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
@@ -105,6 +115,8 @@ class CheckQueueManager
         http.Fetch url, onSuccess, onFailure
 
     groom: () =>
+        @Logger\trace "Grooming queue"
+
         nextSteamId = @queueOrder[1]
         steamIdInfo = @queue[nextSteamId]
 
