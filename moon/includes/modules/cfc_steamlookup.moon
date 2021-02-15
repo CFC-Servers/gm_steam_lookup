@@ -35,7 +35,7 @@ class CheckQueueManager
         @lookupSteps = { "PlayerSummary" }
         @lookupStepsCount = #@lookupSteps
 
-        Create @timerName, @timerInterval, 0, self\groom
+        Create @timerName, @timerInterval, 0, pcall -> self\groom!
 
         @Logger\info "Loaded!"
 
