@@ -121,8 +121,6 @@ class CheckQueueManager
         http.Fetch url, onSuccess, onFailure
 
     groom: () =>
-        @Logger\trace "Grooming queue"
-
         nextSteamId = @queueOrder[1]
         steamIdInfo = @queue[nextSteamId]
 
