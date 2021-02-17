@@ -78,7 +78,7 @@ class CheckQueueManager
 
     remove: (steamId, queueIndex) =>
         @queue[steamId] = nil
-        tableRemove queueOrder, queueIndex
+        tableRemove @queueOrder, queueIndex
         @pause! if #@queueOrder == 0
 
     pause: () =>
@@ -127,7 +127,7 @@ class CheckQueueManager
         removeId = -> @remove nextSteamId, 1
 
         if steamIdInfo == nil
-            return
+            return removeId!
 
         if steamIdInfo.step > @lookupStepsCount
             return removeId!
@@ -135,14 +135,10 @@ class CheckQueueManager
         if steamIdInfo.attempts > @attemptLimit
             return removeId!
 
-        success, err = @lookup nextSteamId
+        @lookup nextSteamId
 
         -- Reset the timer
         @start!
-
-        return unless success
-
-        @Logger\error err
 
 export SteamCheckQueue = CheckQueueManager!
 
