@@ -144,3 +144,4 @@ export SteamCheckQueue = CheckQueueManager!
 
 hook.Add "PlayerAuthed", "CFC_SteamLookup_QueueLookup", (ply) ->
     pcall -> SteamCheckQueue\add ply
+    return nil
