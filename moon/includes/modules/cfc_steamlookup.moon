@@ -1,4 +1,4 @@
-require "cfclogger"
+require "logger"
 
 import Create, Pause, Start from timer
 import insert from table
@@ -22,7 +22,7 @@ class CheckQueueManager
         @queueOrder = {}
         @attemptLimit = 2 -- Per lookup step
         @paused = false
-        @Logger = CFCLogger "CFC_SteamLookup"
+        @Logger = Logger "CFC_SteamLookup"
 
         @timerName = "CFC_SteamLookup_CheckQueue"
         @timerInterval = 1.5
