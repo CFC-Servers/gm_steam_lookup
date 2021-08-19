@@ -100,6 +100,7 @@ class CheckQueueManager
 
         onSuccess = (body, size, headers, code) ->
             @Logger\debug body, size, headers, code
+            return unless @queue[steamId]
 
             @queue[steamId].attempts = 0
             @queue[steamId].step += 1
@@ -115,6 +116,7 @@ class CheckQueueManager
             Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
+            return unless @queue[steamId]
             @queue[steamId].attempts += 1
             @Logger\warn "Failed request to '#{url}', failure: #{err}"
 
