@@ -5,7 +5,6 @@ Automatically looks up players on the Steamworks API when a player joins the ser
 First, you'll need to set the following convar with your [Steam API Key](https://steamcommunity.com/dev/apikey):
 ```
 gm_steamlookup_api_key "<api key>"
-
 ```
 
 **Simple**
