@@ -1,20 +1,29 @@
 require "logger"
 
 import Create, Pause, Start from timer
+import format from string
 import insert from table
-import Replace, format from string
+{remove: tableRemove} = table
 
 import JSONToTable from util
 import GetBySteamID64 from player
 import Run from hook
-import Read from file
+import pcall from _G
 
-pcall = pcall
-tableRemove = table.remove
+steamKey = CreateConVar "cfc_steam_api_key", "", FCVAR_PROTECTED + FCVAR_UNREGISTERED
+steamKey = steamKey\GetString!
 
-steamKey = Read "steam_api_key.txt", "DATA"
-steamKey = Replace steamKey, "\r", ""
-steamKey = Replace steamKey, "\n", ""
+export class SteamLookup
+    @steamBase: "https://api.steampowered.com"
+
+    new: (@name, @apiRoute, @buildParams) =>
+        @baseUrl = "#{@steamBase}/#{@apiRoute}/?key=#{steamKey}&format=json"
+
+    getUrl: (steamId) =>
+        params = @buildParams steamId
+        params = "&#{k}=#{v}" for k, v in pairs params
+
+        @baseUrl + params
 
 class CheckQueueManager
     new: () =>
@@ -27,40 +36,23 @@ class CheckQueueManager
         @timerName = "CFC_SteamLookup_CheckQueue"
         @timerInterval = 1.5
 
-        @steamBase = "https://api.steampowered.com"
-        @lookups =
-            PlayerSummary:
-                baseUrl: "#{@steamBase}/ISteamUser/GetPlayerSummaries/v2/"
-
-        @lookupSteps = { "PlayerSummary" }
+        @lookups = {}
+        @lookupSteps = {}
         @lookupStepsCount = #@lookupSteps
 
         Create @timerName, @timerInterval, 0, -> pcall -> self\groom!
 
         @Logger\info "Loaded!"
 
-    _generateParamString: (extraParams) =>
-        extraParamsStr = ""
-
-        for key, value in pairs extraParams
-            extraParamsStr ..= "&#{key}=#{value}"
-
-        extraParamsStr
-
-    _addQueryParams: (url, steamId, extraParams={}) =>
-        extraParams = @_generateParamString extraParams
-        "#{url}?key=#{steamKey}&steamids=#{steamId}&format=json#{extraParams}"
-
-    addLookup: (name, urlSuffix, extraParams, top=false) =>
-        @Logger\info "Adding new Lookup. Name: '#{name}' | URL: '#{urlSuffix}'"
+    addLookup: (steamLookup) =>
+        @Logger\info "Adding new Lookup. Name: '#{steamLookup.name}' | URL: '#{steamLookup.apiRoute}'"
 
         position = top and 1 or nil
 
         insert @lookupSteps, name, position
         @lookupStepsCount = #@lookupSteps
 
-        baseUrl = "#{@steamBase}/#{urlSuffix}"
-        @lookups[name] = :baseUrl, :extraParams
+        @lookups[name] = steamLookup
 
     add: (ply) =>
         steamId = ply\SteamID64!
@@ -95,7 +87,7 @@ class CheckQueueManager
         stepName = @lookupSteps[queueItem.step]
         lookup = @lookups[stepName]
 
-        url = @_addQueryParams lookup.baseUrl, steamId, lookup.extraParams
+        url = lookup\getUrl steamId
         @Logger\info "Attempting lookup to '#{url}'"
 
         onSuccess = (body, size, headers, code) ->
@@ -147,3 +139,12 @@ export SteamCheckQueue = CheckQueueManager!
 hook.Add "PlayerAuthed", "CFC_SteamLookup_QueueLookup", (ply) ->
     pcall -> SteamCheckQueue\add ply
     return nil
+
+do
+    name = "PlayerSummary"
+    route = "ISteamUser/GetPlayerSummaries/v2"
+    urlParams = (steamId) -> { steamids: steamId }
+
+    lookup = SteamLookup name, route, urlParams
+
+    SteamCheckQueue\addLookup lookup
