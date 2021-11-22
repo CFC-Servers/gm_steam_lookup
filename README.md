@@ -26,7 +26,7 @@ SteamLookups runs a hook on every successful lookup.
 **Registering new lookups**
 If you want SteamLookups to perform another lookup on each player that joins, you may use the `addLookup` method.
 
-**`SteamCheckQueue:addLookup` **
+**`SteamCheckQueue:addLookup`**
 ```lua
 -- This is the `stepName` you'l be listening for in the previous section
 -- Can be any string
