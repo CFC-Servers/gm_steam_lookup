@@ -9,7 +9,7 @@ import GetBySteamID64 from player
 import Run from hook
 import pcall from _G
 
-steamKey = CreateConVar "cfc_steam_api_key", "", FCVAR_PROTECTED + FCVAR_ARCHIVE + FCVAR_UNREGISTERED
+steamKey = CreateConVar "gm_steamlookup_api_key", "", FCVAR_PROTECTED + FCVAR_ARCHIVE + FCVAR_UNREGISTERED
 steamKey = steamKey\GetString!
 
 export class SteamLookup

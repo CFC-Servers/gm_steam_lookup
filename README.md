@@ -1,8 +1,12 @@
-# cfc_steam_lookup
+# GM Steam Lookup
 Automatically looks up players on the Steamworks API when a player joins the server and caches the response.
 
 ## Installation
-First, you'll need to add your Steam API Key to a new file in your `data` directory, `data/steam_api_key.txt`
+First, you'll need to set the following convar with your [Steam API Key](https://steamcommunity.com/dev/apikey):
+```
+gm_steamlookup_api_key "<api key>"
+
+```
 
 **Simple**
  - You can download the latest release .zip from the [Releases]() tab. Extract that and place it in your `addons` directory.
@@ -23,8 +27,25 @@ SteamLookups runs a hook on every successful lookup.
 **Registering new lookups**
 If you want SteamLookups to perform another lookup on each player that joins, you may use the `addLookup` method.
 
-`SteamCheckQueue:addLookup` takes four parameters:
- - `name`: The nice-name of the event
- - `urlSuffix`: The Steam API endpoint, everythign that comes after `api.steampowered.com` (without a leading slash)
- - `extraParams`: A table of extra, static parameters that should be added to the API call 
- - `top`: A boolean indicating whether or not this check should be inserted at the top of the step order
+**`SteamCheckQueue:addLookup` **
+```lua
+-- This is the `stepName` you'l be listening for in the previous section
+-- Can be any string
+local stepName = "PlayerSummary"
+
+-- This is the route portion of the Steam API URL
+-- i.e. from: https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/
+-- Take everything after "api.steampowered.com/" but before any URL params
+route = "ISteamUser/GetPlayerSummaries/v2"
+
+-- This function is called when creating the URL
+-- It will convert any table returned here into a set of URL params
+-- i.e: "{ steamid: 'test' }" would turn into "&steamid=test"
+urlParams = (steamId) -> { steamids: steamid }
+
+-- Create the SteamLookup object
+lookup = SteamLookup name, route, urlParams
+
+-- Add it to the SteamCheckQueue
+SteamCheckQueue\addLookup lookup
+```
