@@ -1,29 +1,30 @@
 require "logger"
 
-import Create, Pause, Start from timer
-import format from string
-import insert from table
-{remove: tableRemove} = table
+{:insert, remove: tableRemove} = table
+{:Pause, :Start, Create: timerCreate} = timer
 
+import format from string
 import JSONToTable from util
 import GetBySteamID64 from player
 import Run from hook
 import pcall from _G
 
-steamKey = CreateConVar "cfc_steam_api_key", "", FCVAR_PROTECTED + FCVAR_UNREGISTERED
+steamKey = CreateConVar "cfc_steam_api_key", "", FCVAR_PROTECTED + FCVAR_ARCHIVE + FCVAR_UNREGISTERED
 steamKey = steamKey\GetString!
 
 export class SteamLookup
     @steamBase: "https://api.steampowered.com"
 
     new: (@name, @apiRoute, @buildParams) =>
-        @baseUrl = "#{@steamBase}/#{@apiRoute}/?key=#{steamKey}&format=json"
+        @baseUrl = "#{@@steamBase}/#{@apiRoute}/?key=#{steamKey}&format=json"
 
     getUrl: (steamId) =>
-        params = @buildParams steamId
-        params = "&#{k}=#{v}" for k, v in pairs params
+        params = ""
 
-        @baseUrl + params
+        for k, v in pairs @.buildParams steamId
+            params ..= "&#{k}=#{v}"
+
+        @baseUrl .. params
 
 class CheckQueueManager
     new: () =>
@@ -40,16 +41,15 @@ class CheckQueueManager
         @lookupSteps = {}
         @lookupStepsCount = #@lookupSteps
 
-        Create @timerName, @timerInterval, 0, -> pcall -> self\groom!
+        timerCreate @timerName, @timerInterval, 0, -> pcall -> self\groom!
 
         @Logger\info "Loaded!"
 
     addLookup: (steamLookup) =>
-        @Logger\info "Adding new Lookup. Name: '#{steamLookup.name}' | URL: '#{steamLookup.apiRoute}'"
+        name = steamLookup.name
+        @Logger\info "Adding new Lookup. Name: '#{name}' | URL: '#{steamLookup.apiRoute}'"
 
-        position = top and 1 or nil
-
-        insert @lookupSteps, name, position
+        insert @lookupSteps, name
         @lookupStepsCount = #@lookupSteps
 
         @lookups[name] = steamLookup
