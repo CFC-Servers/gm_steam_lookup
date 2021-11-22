@@ -16,25 +16,27 @@ gm_steamlookup_api_key "<api key>"
 ## Usage
 This library provides two interactions.
 
-**Listening for lookups**
+### Listening for lookups
 SteamLookups runs a hook on every successful lookup.
  - The `CFC_SteamLookup_SuccessfulPlayerData` hook will be called with `stepName`, `ply`, and `data`.
  - `stepName` is the nice-name of the event (by default, `PlayerSummary` is the only event )
  - `ply` is the player the lookup was done for
  - `data` is the raw response from the Steam API
 
-**Registering new lookups**
+### Registering new lookups
+
 If you want SteamLookups to perform another lookup on each player that joins, you may use the `addLookup` method.
 
 **`SteamCheckQueue:addLookup`**
 ```lua
--- This is the `stepName` you'l be listening for in the previous section
+-- This is the stepName you'll be listening for in the previous section
 -- Can be any string
 local stepName = "PlayerSummary"
 
 -- This is the route portion of the Steam API URL
--- i.e. from: https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/
--- Take everything after "api.steampowered.com/" but before any URL params
+-- i.e. from: https://api.steampowered.com/[ISteamUser/GetPlayerSummaries/v2]/
+-- Take everything between the square brackets
+-- (Leave off the leading+trailing slashes)
 route = "ISteamUser/GetPlayerSummaries/v2"
 
 -- This function is called when creating the URL
