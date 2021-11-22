@@ -102,9 +102,11 @@ class CheckQueueManager
             data = JSONToTable body
 
             ply = queueItem.ply
-            ply[stepName] = data
 
-            @Logger\info "Successful lookup to '#{url}'"
+            ply.SteamLookup or= {}
+            ply.SteamLookup[stepName] = data
+
+            @Logger\info "Successful lookup to '#{url}' for: ", ply
             Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
