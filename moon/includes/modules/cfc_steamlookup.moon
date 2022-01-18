@@ -6,7 +6,6 @@ require "logger"
 import format from string
 import JSONToTable from util
 import GetBySteamID64 from player
-import Run from hook
 import pcall from _G
 
 steamKey = CreateConVar "gm_steamlookup_api_key", "", FCVAR_PROTECTED + FCVAR_ARCHIVE + FCVAR_UNREGISTERED
@@ -107,7 +106,7 @@ class CheckQueueManager
             ply.SteamLookup[stepName] = data
 
             @Logger\info "Successful lookup to '#{url}' for: ", ply
-            Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
+            hook.Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
             return unless @queue[steamId]
