@@ -9,18 +9,17 @@ import GetBySteamID64 from player
 import pcall from _G
 
 steamKey = CreateConVar "gm_steamlookup_api_key", "", FCVAR_PROTECTED + FCVAR_ARCHIVE + FCVAR_UNREGISTERED
-steamKey = steamKey\GetString!
 
 export class SteamLookup
     @steamBase: "https://api.steampowered.com"
 
     new: (@name, @apiRoute, @buildParams) =>
-        @baseUrl = "#{@@steamBase}/#{@apiRoute}/?key=#{steamKey}&format=json"
+        @baseUrl = "#{@@steamBase}/#{@apiRoute}/?key=#{steamKey\GetString!}&format=json"
 
     getUrl: (steamId) =>
         params = ""
 
-        for k, v in pairs @.buildParams steamId
+        for k, v in pairs self.buildParams steamId
             params ..= "&#{k}=#{v}"
 
         @baseUrl .. params
@@ -30,7 +29,7 @@ class CheckQueueManager
         @queue = {}
         @queueOrder = {}
         @attemptLimit = 2 -- Per lookup step
-        @paused = false
+        @paused = true
         @Logger = Logger "CFC_SteamLookup"
 
         @timerName = "CFC_SteamLookup_CheckQueue"
@@ -40,12 +39,18 @@ class CheckQueueManager
         @lookupSteps = {}
         @lookupStepsCount = #@lookupSteps
 
-        timerCreate @timerName, @timerInterval, 0, -> pcall -> self\groom!
+        timerCreate @timerName, @timerInterval, 0, ->
+            success, err = pcall self\groom
+            ErrorNoHalt err unless success
+
+        @pause!
 
         @Logger\info "Loaded!"
 
     addLookup: (steamLookup) =>
         name = steamLookup.name
+        return if @lookups[name]
+
         @Logger\info "Adding new Lookup. Name: '#{name}' | URL: '#{steamLookup.apiRoute}'"
 
         insert @lookupSteps, name
@@ -56,7 +61,7 @@ class CheckQueueManager
     add: (ply) =>
         steamId = ply\SteamID64!
 
-        @Logger\debug "Adding new player to queue, '#{steamId}'"
+        @Logger\info "Adding new player to queue, '#{steamId}'"
 
         @queue[steamId] =
             step: 1
@@ -90,18 +95,18 @@ class CheckQueueManager
         @Logger\info "Attempting lookup to '#{url}'"
 
         onSuccess = (body, size, headers, code) ->
-            @Logger\debug body, size, headers, code
+            @Logger\info body, size, headers, code
             return unless @queue[steamId]
 
             @queue[steamId].attempts = 0
             @queue[steamId].step += 1
 
-            @Logger\debug body
+            @Logger\info "Response info:", size, code
+            @Logger\info "Response body:", body
 
             data = JSONToTable body
 
             ply = queueItem.ply
-
             ply.SteamLookup or= {}
             ply.SteamLookup[stepName] = data
 
@@ -121,14 +126,9 @@ class CheckQueueManager
 
         removeId = -> @remove nextSteamId, 1
 
-        if steamIdInfo == nil
-            return removeId!
-
-        if steamIdInfo.step > @lookupStepsCount
-            return removeId!
-
-        if steamIdInfo.attempts > @attemptLimit
-            return removeId!
+        return removeId! if steamIdInfo == nil
+        return removeId! if steamIdInfo.step > @lookupStepsCount
+        return removeId! if steamIdInfo.attempts > @attemptLimit
 
         @lookup nextSteamId
 
@@ -138,14 +138,16 @@ class CheckQueueManager
 export SteamCheckQueue = CheckQueueManager!
 
 hook.Add "PlayerAuthed", "CFC_SteamLookup_QueueLookup", (ply) ->
-    pcall -> SteamCheckQueue\add ply
+    success, err = pcall -> SteamCheckQueue\add ply
+    ErrorNoHalt err unless success
     return nil
 
-do
+hook.Add "Think", "SteamLookup_Setup", ->
+    hook.Remove "Think", "SteamLookup_Setup"
+
     name = "PlayerSummary"
     route = "ISteamUser/GetPlayerSummaries/v2"
     urlParams = (steamId) -> { steamids: steamId }
 
     lookup = SteamLookup name, route, urlParams
-
     SteamCheckQueue\addLookup lookup
