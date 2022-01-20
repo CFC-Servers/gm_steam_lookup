@@ -14,7 +14,7 @@ gm_steamlookup_api_key "<api key>"
  - You can clone this repository directly into your `addons` directory, but be sure to check out the `lua` branch which contains the compiled Lua from the latest release.
 
 ## Requirements
- - [Logger](https://github.com/CFC-Servers/gm_logger) (optional, but suggested)
+ - [Logger](https://github.com/CFC-Servers/gm_logger)
 
 ## Usage
 This library provides two interactions.
