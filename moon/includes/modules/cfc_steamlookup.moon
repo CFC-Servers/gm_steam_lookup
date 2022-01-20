@@ -97,14 +97,13 @@ class CheckQueueManager
         @Logger\info "Attempting lookup to '#{url}'"
 
         onSuccess = (body, size, headers, code) ->
-            @Logger\info body, size, headers, code
             return unless @queue[steamId]
 
             @queue[steamId].attempts = 0
             @queue[steamId].step += 1
 
-            @Logger\info "Response info:", size, code
-            @Logger\info "Response body:", body
+            @Logger\debug "Response info:", size, code
+            @Logger\debug "Response body:", body
 
             data = JSONToTable body
 
