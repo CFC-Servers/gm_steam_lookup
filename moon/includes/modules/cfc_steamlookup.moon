@@ -1,5 +1,7 @@
 require "logger"
 
+return if SteamCheckQueue
+
 {:insert, remove: tableRemove} = table
 {:Pause, :Start, Create: timerCreate} = timer
 
