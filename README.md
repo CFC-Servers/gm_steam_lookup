@@ -13,6 +13,9 @@ gm_steamlookup_api_key "<api key>"
 **Source Controlled**
  - You can clone this repository directly into your `addons` directory, but be sure to check out the `lua` branch which contains the compiled Lua from the latest release.
 
+## Requirements
+ - [Logger](https://github.com/CFC-Servers/gm_logger) (optional, but suggested)
+
 ## Usage
 This library provides two interactions.
 
@@ -29,6 +32,8 @@ If you want SteamLookups to perform another lookup on each player that joins, yo
 
 **`SteamCheckQueue:addLookup`**
 ```lua
+require "steamlookup"
+
 -- This is the stepName you'll be listening for in the previous section
 -- Can be any string
 local stepName = "PlayerSummary"

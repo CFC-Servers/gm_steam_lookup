@@ -32,7 +32,7 @@ class CheckQueueManager
         @queueOrder = {}
         @attemptLimit = 2 -- Per lookup step
         @paused = true
-        @Logger = Logger "CFC_SteamLookup"
+        @Logger = Logger "SteamLookup"
 
         @timerName = "CFC_SteamLookup_CheckQueue"
         @timerInterval = 1.5
