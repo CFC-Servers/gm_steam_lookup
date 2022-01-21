@@ -50,7 +50,7 @@ local route = "ISteamUser/GetPlayerSummaries/v2"
 local urlParams = function( steamID ) return { steamids = steamID } end
 
 -- Create the SteamLookup object
-lookup = SteamLookup( name, route, urlParams )
+local lookup = SteamLookup( name, route, urlParams )
 
 -- Add it to the SteamCheckQueue
 SteamCheckQueue:addLookup( lookup )
