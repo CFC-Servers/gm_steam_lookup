@@ -22,7 +22,7 @@ This library provides two interactions.
 ### Listening for lookups
 SteamLookups runs a hook on every successful lookup.
  - The `CFC_SteamLookup_SuccessfulPlayerData` hook will be called with `stepName`, `ply`, and `data`.
- - `stepName` is the nice-name of the event (by default, `PlayerSummary` is the only event )
+ - `stepName` is the nice-name of the event (by default, `PlayerSummary` is the only event)
  - `ply` is the player the lookup was done for
  - `data` is the raw response from the Steam API
 
@@ -42,16 +42,16 @@ local stepName = "PlayerSummary"
 -- i.e. from: https://api.steampowered.com/[ISteamUser/GetPlayerSummaries/v2]/
 -- Take everything between the square brackets
 -- (Leave off the leading+trailing slashes)
-route = "ISteamUser/GetPlayerSummaries/v2"
+local route = "ISteamUser/GetPlayerSummaries/v2"
 
 -- This function is called when creating the URL
 -- It will convert any table returned here into a set of URL params
 -- i.e: "{ steamid: 'test' }" would turn into "&steamid=test"
-urlParams = (steamId) -> { steamids: steamid }
+local urlParams = function( steamID ) return { steamids = steamID } end
 
 -- Create the SteamLookup object
-lookup = SteamLookup name, route, urlParams
+lookup = SteamLookup( name, route, urlParams )
 
 -- Add it to the SteamCheckQueue
-SteamCheckQueue\addLookup lookup
+SteamCheckQueue:addLookup( lookup )
 ```
