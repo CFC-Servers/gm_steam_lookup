@@ -107,6 +107,7 @@ class CheckQueueManager
 
             data = JSONToTable body
 
+            return unless IsValid ply
             ply = queueItem.ply
             ply.SteamLookup or= {}
             ply.SteamLookup[stepName] = data
