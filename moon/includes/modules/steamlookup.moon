@@ -53,7 +53,7 @@ class CheckQueueManager
         name = steamLookup.name
         return if @lookups[name]
 
-        @Logger\info "Adding new Lookup. Name: '#{name}' | URL: '#{steamLookup.apiRoute}'"
+        @Logger\debug "Adding new Lookup. Name: '#{name}' | URL: '#{steamLookup.apiRoute}'"
 
         insert @lookupSteps, name
         @lookupStepsCount = #@lookupSteps
@@ -63,7 +63,7 @@ class CheckQueueManager
     add: (ply) =>
         steamId = ply\SteamID64!
 
-        @Logger\info "Adding new player to queue, '#{steamId}'"
+        @Logger\debug "Adding new player to queue, '#{steamId}'"
 
         @queue[steamId] =
             step: 1
@@ -94,7 +94,7 @@ class CheckQueueManager
         lookup = @lookups[stepName]
 
         url = lookup\getUrl steamId
-        @Logger\info "Attempting lookup to '#{url}'"
+        @Logger\debug "Attempting lookup to '#{url}'"
 
         onSuccess = (body, size, headers, code) ->
             return unless @queue[steamId]
@@ -112,7 +112,7 @@ class CheckQueueManager
             ply.SteamLookup or= {}
             ply.SteamLookup[stepName] = data
 
-            @Logger\info "Successful lookup to '#{url}' for: ", ply
+            @Logger\debug "Successful lookup to '#{url}' for: ", ply
             hook.Run "CFC_SteamLookup_SuccessfulPlayerData", stepName, ply, data
 
         onFailure = (err) ->
